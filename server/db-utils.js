@@ -63,6 +63,7 @@ async function findAllMessagesNewestToOldest(db, count) {
     .limit(count);
   
   const loadedMessages = await cursor.toArray(); 
+  console.log("typeof messages originally: " + typeof loadedMessages);
   //console.log(loadedMessages); 
   return loadedMessages;
 }
@@ -80,6 +81,7 @@ async function findAllMessagesBeforeTimeStampNewestToOldest(db, count, earliestL
       })
       .limit(count)
     const loadedMessages = await cursor.toArray(); 
+    console.log("typeof messages originally: " + typeof messages);
    return loadedMessages;
 
 }
