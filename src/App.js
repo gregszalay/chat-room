@@ -18,10 +18,9 @@ function App() {
           </Route>
           <Route path="/chat">
             <Chat />
-          </Route>
-          <Route path="/users">
             <Users />
           </Route>
+          
         </Switch>
       </div>
     </BrowserRouter>
