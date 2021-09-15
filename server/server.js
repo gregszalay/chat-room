@@ -8,18 +8,35 @@ const io = require("socket.io")(server, {
   }
 });
 const {
-  saveMessage, getNewMessages, getOldMessages, getTimeStampFromId
+  saveMessage, getNewMessages, getOldMessages, getTimeStampFromId, getSocketConnectionsMap
 } = require('./db-utils');
 
-const usersInRoom = [];
-const usernamesToSocketIds = new Map();
+function logMapElements(value, key, map) {
+  console.log(`m[${key}] = ${value}`);
+}
+
+let usersInRoom = [];
+
 
 io.on('connection', (socket) => {
 
   console.log('A user has connected')
 
+  /*
+  getSocketConnectionsMap().set(socket.id, "Névtelen felhasználó");
+  io.emit('roomUsers', {
+    users:  [ ...getSocketConnectionsMap().values() ]
+  });
+
+  */
+
   socket.on("disconnect", (reason) => {
     console.log("A user was disconnected due to: " + reason);
+    getSocketConnectionsMap().delete(socket.id);
+    io.emit('roomUsers', {
+      users: /*usersInRoom*/ [ ...getSocketConnectionsMap().values() ]
+    });
+    //usersInRoom=[];
   });
 
   //Join chat, load 20 most recent messages from db
@@ -27,7 +44,7 @@ io.on('connection', (socket) => {
     console.log(username + " has joined the chat");
 
     usersInRoom.push(username);
-    usernamesToSocketIds.set(socket.id, username);
+    getSocketConnectionsMap().set(socket.id, username);
 
     socket.join('Main Room');
 
@@ -39,12 +56,20 @@ io.on('connection', (socket) => {
       .catch(error => { console.log(error) });
 
 
-    io.to('Main Room').emit('roomUsers', {
-      room: 'Main Room',
-      users: usersInRoom
+    io.emit('roomUsers', {
+      users: /*usersInRoom*/ [ ...getSocketConnectionsMap().values() ]
     });
   });
 
+  socket.on("updateUserName", newUserName => {
+    usersInRoom.push(newUserName);
+    getSocketConnectionsMap().set(socket.id, newUserName);
+    io.emit('roomUsers', {
+      users: [ ...getSocketConnectionsMap().values() ]
+    });
+  });
+
+  //maybe have promises onyl ehere not in dbutils
   socket.on("loadFreshMessages", () => {
     getNewMessages(20)
       .then(loadedMessages => {
@@ -67,7 +92,7 @@ io.on('connection', (socket) => {
 
   //Save new message to db
   socket.on("newMessage", message => {
-    username = usernamesToSocketIds.get(socket.id);
+    username = getSocketConnectionsMap().get(socket.id);
     saveMessage(username, message)
       .then(savedMessage => {
         console.log("A new mewssage was saved: " + savedMessage);

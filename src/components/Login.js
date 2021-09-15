@@ -1,5 +1,7 @@
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
+import Container from "react-bootstrap/Container";
+
 
 import  {useState, useContext, useCallback, useEffect, useRef} from 'react';
 //import {SocketContext, socket} from '../context/socket';
@@ -7,8 +9,10 @@ import  {useState, useContext, useCallback, useEffect, useRef} from 'react';
 import { BrowserRouter, Switch, Route, Redirect} from 'react-router-dom';
 import Chat from './Chat'
 
+
 import io from "socket.io-client";
 import socket from '../socketConfig'
+
 
 
 const Login = () => {
@@ -43,25 +47,26 @@ const Login = () => {
      } 
 
     return (
-        
-        
+       
+        <Container fluid="md">
             <div className="Login">
                 {console.log("rendered")}
-            <Form onSubmit={handleSubmit}>
+            <Form onSubmit={handleSubmit} className="m-5" >
                 <Form.Group size="lg" controlId="nickname">
-                    <Form.Label>Becenév</Form.Label>
+                    <Form.Label>Kérlek, add meg a beceneved:</Form.Label>
                     <Form.Control
                         autoFocus
                         type="text"
                         value={nickname}
                         onChange={(e) => setNickname(e.target.value)}
-                    />
+                        />
                 </Form.Group>
                 <Button block size="lg" type="submit" disabled={!validateForm()}>
-                Login
+                Csatlakozás
                 </Button>
             </Form>
             </div>
+                        </Container>
     );
                 }
 

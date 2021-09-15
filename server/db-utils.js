@@ -1,6 +1,15 @@
 const MongoClient = require('mongodb').MongoClient
 const connectionString = 'mongodb://127.0.0.1:27017'
 
+const usernamesToSocketIds = new Map();
+
+
+function getSocketConnectionsMap(){
+  return usernamesToSocketIds;
+}
+
+
+
 //Saves one message, returns a Promise
 function saveMessage(nickname, message) {
   return connectToDB()
@@ -87,4 +96,4 @@ async function findAllMessagesBeforeTimeStampNewestToOldest(db, count, earliestL
 }
 
 
-module.exports = { saveMessage, getNewMessages, getOldMessages, getTimeStampFromId };
+module.exports = { saveMessage, getNewMessages, getOldMessages, getTimeStampFromId , getSocketConnectionsMap};
