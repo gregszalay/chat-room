@@ -7,7 +7,7 @@ Install:
 
 Run the backend:
 
-### `npm start`
+### `npm run dev`
 
 Run the frontend:
 
