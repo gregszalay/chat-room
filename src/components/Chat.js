@@ -20,6 +20,8 @@ var listItems;
 const Chat = () => {
 
     const [messages, setMessages] = useState(listItems);
+    const [messagesRaw, setMessagesRaw] = useState("");
+
     const [newMessage, setNewMessage] = useState("");
 
     const [showUserList, setShowUserList] = useState(false);
@@ -42,7 +44,9 @@ const Chat = () => {
     });
 
     socket.on("freshMessages", messages => {
+        setMessagesRaw(messages);
         console.log("typeof messages: " + typeof messages);
+
         listItems = messages.map((m) =>
             <Card className="mt-2 mb-2">
                 <Card.Header>{m.nickName}</Card.Header>
@@ -53,7 +57,10 @@ const Chat = () => {
                             {m.message}{' '}
                         </p>
                         <footer className="blockquote-footer">
-                            Someone famous in <cite title="Source Title">{m._id}</cite>
+                            <cite title="Source Title">{
+                            
+                            new Date(parseInt(m._id.substring(0, 8), 16) * 1000).toString()
+                            }</cite>
                         </footer>
                     </blockquote>
                 </Card.Body>
@@ -93,7 +100,12 @@ const Chat = () => {
         }
     }
 
-
+    const handleScroll = (e) => {
+        const bottom = e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
+        if (bottom) { 
+            socket.emit("loadMoreMessages", 20);
+         }
+      }
 
 
 
@@ -137,7 +149,7 @@ const Chat = () => {
                 </Form>
             </Container>
 
-            <Container fluid="md" className="m-5">
+            <Container fluid="md" className="m-5" >
                 <Row>
 
 
@@ -146,7 +158,11 @@ const Chat = () => {
                     </Button>
 
                     <Col>
+                    <div style={{overflow:'scroll', height:'400px'}} onScroll={(e) => handleScroll(e)}>
+                       
+            
                         {messages}
+                        </div>
                     </Col>
                     <Col>
 

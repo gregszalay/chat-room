@@ -80,11 +80,11 @@ io.on('connection', (socket) => {
   });
 
   //Load 20 more messages from before the earliest message from db
-  socket.on("loadMoreMessages", earliestLoadedMessage => {
-    getOldMessages(20, earliestLoadedMessage)
-      .then(earlierMessages => {
-        console.log(earlierMessages);
-        socket.emit(earlierMessages);
+  socket.on("loadMoreMessages", numberOfLoadedMessages => {
+    getNewMessages(numberOfLoadedMessages + 20)
+      .then(loadedMessages => {
+        console.log(loadedMessages);
+        socket.emit("freshMessages", loadedMessages);
       })
       .catch(error => { console.log(error) });
   });
