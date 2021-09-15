@@ -99,7 +99,6 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('savedMessage', savedMessage);
         getNewMessages(20)
           .then(loadedMessages => {
-            console.log(loadedMessages);
             socket.broadcast.emit("freshMessages", loadedMessages);
           })
           .catch(error => { console.log(error) });
