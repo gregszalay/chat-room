@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
@@ -6,56 +8,34 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import Offcanvas from "react-bootstrap/Offcanvas";
 
-
-import Users from './Users'
-import { useState, useContext, useCallback, useEffect, useRef } from 'react';
-//import {SocketContext, socket} from '../context/socket';
-//const socket = useContext(SocketContext);
-import { Redirect, useLocation } from 'react-router'
-
-import io from "socket.io-client";
 import socket from '../socketConfig'
 
-
-
 var listItems;
-
 
 const Chat = () => {
 
     const [messages, setMessages] = useState(listItems);
-    const [messagesRaw, setMessagesRaw] = useState("");
-
     const [newMessage, setNewMessage] = useState("");
-
     const [showUserList, setShowUserList] = useState(false);
-
     const [userName, setUserName] = useState("");
     const [activeUsers, setActiveUsers] = useState(userName);
-    //const socket = io("ws://localhost:8089");
 
-  
+    const [show, setShow] = useState(false);
+    const handleClose = () => setShow(false);
+    const handleShow = () => setShow(true);
 
-    useEffect(async () => {
-        socket.emit("loadFreshMessages");
-
-
+    useEffect(() => {
+        socket.emit("loadMessages", 0);
     }, [])
 
     socket.on("roomUsers", users => {
-        //console.log("typeof users: " + typeof users);
-        const usersMap = users.users.map((u) => <li> {u}</li>);
+        const usersMap = users.users.map((u) => <li>{u}</li>);
         setActiveUsers(usersMap);
-        console.log("users event fired: " + usersMap);
     });
 
     socket.on("freshMessages", messages => {
-        setMessagesRaw(messages);
-        console.log("typeof messages: " + typeof messages);
-
         listItems = messagesToList(messages);
         setMessages(listItems);
-        console.log("event fired: " + messages);
     });
 
     const messagesToList = (messages) => {
@@ -65,12 +45,10 @@ const Chat = () => {
             <Card.Body>
                 <blockquote className="blockquote mb-0">
                     <p>
-                        {' '}
-                        {m.message}{' '}
+                        {' '}{m.message}{' '}
                     </p>
                     <footer className="blockquote-footer">
                         <cite title="Source Title">{
-
                             new Date(parseInt(m._id.substring(0, 8), 16) * 1000).toString()
                         }</cite>
                     </footer>
@@ -80,69 +58,37 @@ const Chat = () => {
     );
     }
 
-
-
     const handleNewMessage = (event) => {
         event.preventDefault();
         socket.emit("newMessage", newMessage);
-        //listItems = messagesToList([newMessage]);
-        //setMessages({ messages: [...messages, listItems] });
+        socket.emit("loadMessages", 1);
         
     }
 
     const handleUserNameUpdate = (event) => {
         event.preventDefault();
-        //setNewMessage(e.target.value);
         setUserName(userName);
         socket.emit("updateUserName", userName);
-        //socket.emit("loadFreshMessages");
+
     }
 
-    const renderAuthButton = () => {
-        if (showUserList) {
-            return <div>
-                <ul>
-                    {activeUsers}
-                </ul>
-            </div>;
-
-
-
-
-        } else {
-            return <h1>test</h1>;
-        }
-    }
 
     const handleScroll = (e) => {
-        const bottom = e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
-        if (bottom) {
-            socket.emit("loadMoreMessages", 20);
+        if (e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight) {
+            socket.emit("loadMessages", messages.length);
         }
+
     }
-
-    const [show, setShow] = useState(false);
-
-    const handleClose = () => setShow(false);
-    const handleShow = () => setShow(true);
-
-
-
+    
     return (
         <Container fluid="md">
             <h3 className="m-5">Üdv a chat szobában!</h3>
             <Row>
                 <Col>
-
-
-
                     <div style={{ overflow: 'scroll', height: '400px' }} onScroll={(e) => handleScroll(e)}>
                         {messages}
                     </div>
-
-
                     <Container fluid="md" className="m-5">
-
                         <Form onSubmit={(e) => handleNewMessage(e)} className="m-5">
                             <Form.Group size="lg" controlId="newMessage">
                                 <Form.Label>Új üzenet:</Form.Label>
@@ -151,7 +97,6 @@ const Chat = () => {
                                     type="text"
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
-
                                 />
                             </Form.Group>
                             <Button block size="lg" type="submit">
@@ -159,8 +104,6 @@ const Chat = () => {
                             </Button>
                         </Form>
                     </Container>
-
-
                 </Col>
                 <Col>
                     <Container fluid="md" className="m-5">
@@ -172,7 +115,6 @@ const Chat = () => {
                                     type="text"
                                     value={userName}
                                     onChange={(e) => setUserName(e.target.value)}
-
                                 />
                             </Form.Group>
                             <Button block size="lg" type="submit">
@@ -182,11 +124,9 @@ const Chat = () => {
                         <Button onClick={() => { handleShow(); setShowUserList(!showUserList); console.log(showUserList); }} >
                             Aktív felhasználók mutatása
                         </Button>
-
                     </Container>
                 </Col>
             </Row>
-
             <Offcanvas show={show} onHide={handleClose}>
                 <Offcanvas.Header closeButton>
                     <Offcanvas.Title>Aktív felhasználók:</Offcanvas.Title>
@@ -195,11 +135,7 @@ const Chat = () => {
                     {activeUsers}
                 </Offcanvas.Body>
             </Offcanvas>
-
         </Container >
-
-
-
     );
 
 

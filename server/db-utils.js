@@ -1,16 +1,7 @@
 const MongoClient = require('mongodb').MongoClient
 const connectionString = 'mongodb://127.0.0.1:27017'
 
-const usernamesToSocketIds = new Map();
-
-
-function getSocketConnectionsMap(){
-  return usernamesToSocketIds;
-}
-
-
-
-//Saves one message, returns a Promise
+//Saves one message, returns a Promise of results
 function saveMessage(nickname, message) {
   return connectToDB()
   .then(db => {return db.collection("messages").insertOne({ nickName: nickname, message: message })})
@@ -18,7 +9,7 @@ function saveMessage(nickname, message) {
 
 }
 
-//Loads new messages, returns a Promise
+//Loads new messages, returns a Promise of results
 function getNewMessages(numberOfMessages) {
   return connectToDB()
   .then(db => {return findAllMessagesNewestToOldest(db, numberOfMessages)})
@@ -26,15 +17,7 @@ function getNewMessages(numberOfMessages) {
   
 }
 
-//Loads messages before a given message, returns a Promise
-function getOldMessages(numberOfMessages, earliestLoadedMessage) {
-  return connectToDB()
-  .then(db => {return findAllMessagesBeforeTimeStampNewestToOldest(db, numberOfMessages, earliestLoadedMessage)})
-  .catch(error => {console.log(error)})
-  
-}
-
-//Connects to db, returns a promise
+//Connects to db, returns a Promise of connection
 function connectToDB() {
   const client = new MongoClient(connectionString);
   return new Promise((resolve, reject) => {
@@ -51,18 +34,6 @@ function connectToDB() {
 
 }
 
-//QUERY METHODS:
-
-async function getTimeStampFromId(db, _id) {
-  const cursor = db.collection("messages")
-  .find()
-  .sort({ '_id': _id })
-  .limit(1);
-  timeStampArray = await cursor.toArray(); 
-  timeStamp = timeStampArray[0]._id.getTimestamp();
-  return timeStamp;
-}
-
 async function findAllMessagesNewestToOldest(db, count) {
   const cursor = db.collection("messages")
     .find({})
@@ -70,30 +41,10 @@ async function findAllMessagesNewestToOldest(db, count) {
       _id: -1
     })
     .limit(count);
-  
   const loadedMessages = await cursor.toArray(); 
-  console.log("typeof messages originally: " + typeof loadedMessages);
-  //console.log(loadedMessages); 
   return loadedMessages;
-}
-
-async function findAllMessagesBeforeTimeStampNewestToOldest(db, count, earliestLoadedMessage) {
-  let timeStamp = getTimeStampFromId(db, earliestLoadedMessage._id);
-  const cursor = db.collection("messages")
-      .find({
-        timestamp: {
-          $lt: timeStamp
-        }
-      })
-      .sort({
-        _id: -1
-      })
-      .limit(count)
-    const loadedMessages = await cursor.toArray(); 
-    console.log("typeof messages originally: " + typeof messages);
-   return loadedMessages;
 
 }
 
 
-module.exports = { saveMessage, getNewMessages, getOldMessages, getTimeStampFromId , getSocketConnectionsMap};
+module.exports = { saveMessage, getNewMessages};

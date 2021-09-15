@@ -7,95 +7,62 @@ const io = require("socket.io")(server, {
     origins: ["localhost:3000", "localhost:8089"]
   }
 });
-const {
-  saveMessage, getNewMessages, getOldMessages, getTimeStampFromId, getSocketConnectionsMap
-} = require('./db-utils');
+const { saveMessage, getNewMessages } = require('./db-utils');
 
-function logMapElements(value, key, map) {
-  console.log(`m[${key}] = ${value}`);
-}
+const usernamesToSocketIds = new Map();
 
-let usersInRoom = [];
-
-
+//Handle new connection
 io.on('connection', (socket) => {
 
-  console.log('A user has connected')
+  console.log('A websocket connection has been made')
 
-  /*
-  getSocketConnectionsMap().set(socket.id, "Névtelen felhasználó");
-  io.emit('roomUsers', {
-    users:  [ ...getSocketConnectionsMap().values() ]
-  });
-
-  */
-
+  //Handle disconnect
   socket.on("disconnect", (reason) => {
     console.log("A user was disconnected due to: " + reason);
-    getSocketConnectionsMap().delete(socket.id);
+    usernamesToSocketIds.delete(socket.id);
     io.emit('roomUsers', {
-      users: /*usersInRoom*/ [ ...getSocketConnectionsMap().values() ]
+      users: [ ...usernamesToSocketIds.values() ]
     });
-    //usersInRoom=[];
   });
 
-  //Join chat, load 20 most recent messages from db
+  //Handle user join
   socket.on("joinChat", username => {
     console.log(username + " has joined the chat");
-
-    usersInRoom.push(username);
-    getSocketConnectionsMap().set(socket.id, username);
-
+    usernamesToSocketIds.set(socket.id, username);
     socket.join('Main Room');
-
     getNewMessages(20)
       .then(loadedMessages => {
-        console.log(loadedMessages);
         socket.emit("freshMessages", loadedMessages);
       })
       .catch(error => { console.log(error) });
-
-
     io.emit('roomUsers', {
-      users: /*usersInRoom*/ [ ...getSocketConnectionsMap().values() ]
+      users: [ ...usernamesToSocketIds.values() ]
     });
   });
 
+  //Handle change of username
   socket.on("updateUserName", newUserName => {
-    usersInRoom.push(newUserName);
-    getSocketConnectionsMap().set(socket.id, newUserName);
+    usernamesToSocketIds.set(socket.id, newUserName);
     io.emit('roomUsers', {
-      users: [ ...getSocketConnectionsMap().values() ]
+      users: [ ...usernamesToSocketIds.values() ]
     });
   });
 
-  //maybe have promises onyl ehere not in dbutils
-  socket.on("loadFreshMessages", () => {
-    getNewMessages(20)
-      .then(loadedMessages => {
-        console.log(loadedMessages);
-        socket.emit("freshMessages", loadedMessages);
-      })
-      .catch(error => { console.log(error) });
-  });
-
-  //Load 20 more messages from before the earliest message from db
-  socket.on("loadMoreMessages", numberOfLoadedMessages => {
+  //Load messages from db
+  socket.on("loadMessages", numberOfLoadedMessages => {
     getNewMessages(numberOfLoadedMessages + 20)
       .then(loadedMessages => {
-        console.log(loadedMessages);
         socket.emit("freshMessages", loadedMessages);
       })
       .catch(error => { console.log(error) });
   });
-
 
   //Save new message to db
   socket.on("newMessage", message => {
-    username = getSocketConnectionsMap().get(socket.id);
+    username = usernamesToSocketIds.get(socket.id);
     saveMessage(username, message)
       .then(savedMessage => {
-        console.log("A new mewssage was saved: " + savedMessage);
+        console.log("A new message was saved: " + savedMessage);
         socket.broadcast.emit('savedMessage', savedMessage);
         getNewMessages(20)
           .then(loadedMessages => {
